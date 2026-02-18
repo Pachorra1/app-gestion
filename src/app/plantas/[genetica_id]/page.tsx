@@ -56,7 +56,7 @@ export default function GeneticaPage() {
     const fetchGenetica = async () => {
       const { data, error } = await supabase
         .from("plantas_geneticas")
-        .select<GeneticaInfo>("nombre")
+        .select("nombre")
         .eq("id", geneticaId)
         .single();
 
