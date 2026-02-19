@@ -129,151 +129,140 @@ export default function OrdenesPage() {
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMensaje({ tipo: "", texto: "" });
+  event.preventDefault();
+  setMensaje({ tipo: "", texto: "" });
 
-    const cantidadRealNum = Number(form.cantidadReal) || 0;
-    const cantidadCobradaNum = Number(form.cantidadCobrada) || 0;
-    const precioNum = Number(form.precioPorGramo) || 0;
-    const totalOrden = cantidadCobradaNum * precioNum;
+  const cantidadRealNum = Number(form.cantidadReal) || 0;
+  const cantidadCobradaNum = Number(form.cantidadCobrada) || 0;
+  const precioNum = Number(form.precioPorGramo) || 0;
 
-    if (
-      !form.clienteId ||
-      !form.geneticaId ||
-      (!form.esPrueba && (!form.metodoPago || cantidadRealNum <= 0 || cantidadCobradaNum <= 0 || precioNum <= 0))
-    ) {
-      setMensaje({ tipo: "error", texto: "Completa todos los campos correctamente." });
-      return;
-    }
+  if (
+    !form.clienteId ||
+    !form.geneticaId ||
+    (!form.esPrueba && (!form.metodoPago || cantidadRealNum <= 0 || cantidadCobradaNum <= 0 || precioNum <= 0))
+  ) {
+    setMensaje({ tipo: "error", texto: "Completa todos los campos correctamente." });
+    return;
+  }
 
-    const genetica = geneticas.find((g) => g.id === form.geneticaId);
-    if (!genetica || genetica.cantidad_gramos < cantidadRealNum) {
-      setMensaje({ tipo: "error", texto: "Stock insuficiente." });
-      return;
-    }
+  const genetica = geneticas.find((g) => g.id === form.geneticaId);
+  if (!genetica || genetica.cantidad_gramos < cantidadRealNum) {
+    setMensaje({ tipo: "error", texto: "Stock insuficiente." });
+    return;
+  }
 
-    const cajaCuenta = form.esPrueba ? null : cajaCuentas.find((c) => c.nombre === form.metodoPago);
-    setCargando(true);
+  setCargando(true);
 
-    try {
-      const { data: clienteActual } = await supabase
+  try {
+    const metodoPagoFinal = form.esPrueba ? "prueba" : form.metodoPago;
+
+    // Generar número de orden único para pruebas
+    const numeroOrdenFinal = form.esPrueba
+      ? `ORD-PRUEBA-${Date.now()}`
+      : form.numeroOrden;
+
+    // Insertar la orden
+    const { data: orden, error: ordenError } = await supabase
+      .from("ordenes")
+      .insert({
+        fecha: form.fecha,
+        cliente_id: form.clienteId,
+        genetica_id: form.geneticaId,
+        cantidad_real_gramos: cantidadRealNum,
+        cantidad_cobrada_gramos: cantidadCobradaNum,
+        precio_por_gramo: precioNum,
+        total: cantidadCobradaNum * precioNum,
+        numero_orden: numeroOrdenFinal,
+        metodo_pago: metodoPagoFinal,
+        caja_cuenta_id: form.esPrueba ? null : cajaCuentas.find((c) => c.nombre === form.metodoPago)?.id,
+      })
+      .select("id, fecha")
+      .single();
+
+    if (ordenError || !orden) throw ordenError;
+
+    // Actualizar stock de genética
+    await supabase
+      .from("geneticas")
+      .update({ cantidad_gramos: genetica.cantidad_gramos - cantidadRealNum })
+      .eq("id", genetica.id);
+
+    setGeneticas((prev) =>
+      prev.map((g) =>
+        g.id === genetica.id ? { ...g, cantidad_gramos: g.cantidad_gramos - cantidadRealNum } : g
+      )
+    );
+
+    if (!form.esPrueba) {
+      // Actualizar cliente y caja normalmente
+      const clienteActual = await supabase
         .from("clientes")
         .select("compras_count, total_gramos, total_gastado")
         .eq("id", form.clienteId)
         .single();
 
-      const metodoPagoFinal = form.esPrueba ? "prueba" : form.metodoPago;
-
-      const { data: orden, error: ordenError } = await supabase
-        .from("ordenes")
-        .insert({
-          fecha: form.fecha,
-          cliente_id: form.clienteId,
-          genetica_id: form.geneticaId,
-          cantidad_real_gramos: cantidadRealNum,
-          cantidad_cobrada_gramos: cantidadCobradaNum,
-          precio_por_gramo: precioNum,
-          total: totalOrden,
-          numero_orden: form.numeroOrden,
-          metodo_pago: metodoPagoFinal,
-          caja_cuenta_id: cajaCuenta?.id || null,
-        })
-        .select("id, fecha")
-        .single();
-
-      if (ordenError || !orden) throw ordenError;
-
-      setOrdenesRecientes((prev) => [
-        {
-          id: orden.id,
-          fecha: orden.fecha,
-          numero_orden: form.numeroOrden,
-          metodo_pago: metodoPagoFinal,
-          total: totalOrden,
-          cliente_id: form.clienteId,
-          cantidad_cobrada_gramos: cantidadCobradaNum,
-        },
-        ...prev.slice(0, 7),
-      ]);
-
-      const { data: geneticaActual, error: stockError } = await supabase
-        .from("geneticas")
-        .select("cantidad_gramos")
-        .eq("id", genetica.id)
-        .single();
-
-      if (stockError || !geneticaActual) throw stockError;
-
-      if (geneticaActual.cantidad_gramos < cantidadRealNum) {
-        throw new Error("Stock insuficiente.");
-      }
-
       await supabase
-        .from("geneticas")
-        .update({ cantidad_gramos: geneticaActual.cantidad_gramos - cantidadRealNum })
-        .eq("id", genetica.id);
+        .from("clientes")
+        .update({
+          compras_count: (clienteActual.data?.compras_count ?? 0) + 1,
+          total_gramos: (clienteActual.data?.total_gramos ?? 0) + cantidadCobradaNum,
+          total_gastado: (clienteActual.data?.total_gastado ?? 0) + cantidadCobradaNum * precioNum,
+          ultima_compra: form.fecha,
+        })
+        .eq("id", form.clienteId);
 
-      setGeneticas((prev) =>
-        prev.map((g) => (g.id === genetica.id ? { ...g, cantidad_gramos: g.cantidad_gramos - cantidadRealNum } : g))
-      );
-
-      if (!form.esPrueba) {
-        await supabase
-          .from("clientes")
-          .update({
-            compras_count: (clienteActual?.compras_count ?? 0) + 1,
-            total_gramos: (clienteActual?.total_gramos ?? 0) + cantidadCobradaNum,
-            total_gastado: (clienteActual?.total_gastado ?? 0) + totalOrden,
-            ultima_compra: form.fecha,
-          })
-          .eq("id", form.clienteId);
-
+      const cajaCuenta = cajaCuentas.find((c) => c.nombre === form.metodoPago);
+      if (cajaCuenta) {
         await supabase
           .from("caja_cuentas")
-          .update({ balance: Number(cajaCuenta!.balance) + totalOrden })
-          .eq("id", cajaCuenta!.id);
+          .update({ balance: cajaCuenta.balance + cantidadCobradaNum * precioNum })
+          .eq("id", cajaCuenta.id);
 
         await supabase.from("caja_movimientos").insert({
-          cuenta_id: cajaCuenta!.id,
+          cuenta_id: cajaCuenta.id,
           tipo: "ingreso",
-          monto: totalOrden,
+          monto: cantidadCobradaNum * precioNum,
           fecha_movimiento: form.fecha,
-          referencia: `Orden ${form.numeroOrden}`,
+          referencia: `Orden ${numeroOrdenFinal}`,
         });
-      } else {
-        await supabase
-          .from("clientes")
-          .update({ ultima_compra_prueba: form.fecha })
-          .eq("id", form.clienteId);
       }
-
-      await supabase.from("movimientos").insert({
-        genetica_id: genetica.id,
-        tipo: "salida",
-        cantidad: cantidadRealNum,
-        fecha: form.fecha,
-        nota: form.esPrueba ? `Prueba ${form.numeroOrden}` : `Salida por orden ${form.numeroOrden}`,
-      });
-
-      setMensaje({ tipo: "success", texto: "Orden registrada correctamente." });
-
-      setForm((prev) => ({
-        ...prev,
-        cantidadReal: "",
-        cantidadCobrada: "",
-        precioPorGramo: "",
-        numeroOrden: `ORD-${Date.now()}`,
-        esPrueba: false,
-      }));
-    } catch (error: any) {
-      setMensaje({
-        tipo: "error",
-        texto: error?.message || "Error al crear la orden.",
-      });
-    } finally {
-      setCargando(false);
+    } else {
+      // Solo registrar que hizo una prueba
+      await supabase
+        .from("clientes")
+        .update({ ultima_compra_prueba: form.fecha })
+        .eq("id", form.clienteId);
     }
-  };
+
+    // Registrar movimiento de genética
+    await supabase.from("movimientos").insert({
+      genetica_id: genetica.id,
+      tipo: "salida",
+      cantidad: cantidadRealNum,
+      fecha: form.fecha,
+      nota: form.esPrueba ? `Prueba ${numeroOrdenFinal}` : `Salida por orden ${numeroOrdenFinal}`,
+    });
+
+    setMensaje({ tipo: "success", texto: "Orden registrada correctamente." });
+
+    setForm((prev) => ({
+      ...prev,
+      cantidadReal: "",
+      cantidadCobrada: "",
+      precioPorGramo: "",
+      numeroOrden: `ORD-${Date.now()}`,
+      esPrueba: false,
+    }));
+  } catch (error: any) {
+    setMensaje({
+      tipo: "error",
+      texto: error?.message || "Error al crear la orden.",
+    });
+  } finally {
+    setCargando(false);
+  }
+};
+
 
   const primaryButton =
     "inline-flex w-full items-center justify-center rounded-full bg-[#007b00] px-6 py-3 text-center text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-[0_20px_45px_rgba(0,123,0,0.35)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0.5";
