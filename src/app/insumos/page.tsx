@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { supabase } from '@/lib/supabaseClient'
 
 type Insumo = {
@@ -43,7 +45,7 @@ export default function InsumosPage() {
   const [monto, setMonto] = useState('')
   const [cuentaSeleccionada, setCuentaSeleccionada] = useState('')
   const [procesando, setProcesando] = useState(false)
-  const [fechaCompra, setFechaCompra] = useState('') // Nueva fecha para la compra
+  const [fechaCompra, setFechaCompra] = useState<Date | null>(null) // Nueva fecha para la compra
 
   const inputClass =
     'w-full rounded-[20px] border border-[#d5d5d5] bg-white px-4 py-3 text-base font-semibold text-[#000] transition focus:border-[#007b00] focus:outline-none focus:ring-2 focus:ring-[#007b00]/30'
@@ -188,7 +190,7 @@ if (!fechaCompra) {
       tipo: 'reinversion',
       monto: -montoNum,
       referencia: `Compra insumo`,
-      fecha_movimiento: fechaCompra ? new Date(fechaCompra) : new Date(),
+      fecha_movimiento: fechaCompra ?? new Date(),
     },
   ])
 
@@ -243,7 +245,7 @@ if (!fechaCompra) {
   setCantidad('')
   setMonto('')
   setCuentaSeleccionada('')
-  setFechaCompra('') // Limpiar fecha al cerrar el modal
+  setFechaCompra(null) // Limpiar fecha al cerrar el modal
 }
 
 
@@ -433,17 +435,6 @@ if (!fechaCompra) {
                   onChange={(e) => handleFileChange(e.target.files)}
                   className="hidden"
                 />
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00000060]">
-                    Fecha de compra
-                  </label>
-                  <input
-                    type="date"
-                    className={inputClass}
-                    value={fechaCompra}
-                    onChange={(e) => setFechaCompra(e.target.value)}
-                  />
-                </div>
               </>
             )}
 
@@ -462,6 +453,20 @@ if (!fechaCompra) {
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
                 />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00000060]">
+                Fecha de compra
+              </label>
+              <DatePicker
+                selected={fechaCompra}
+                onChange={(date) => setFechaCompra(date)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="dd/mm/yyyy"
+                className={inputClass}
+                maxDate={new Date()}
+                showPopperArrow={false}
+              />
             </div>
             <select
               className={`${selectClass} cursor-pointer`}

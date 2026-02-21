@@ -14,6 +14,7 @@ import {
   calcularIngresosMes,
   calcularReinversionMes,
   calcularClienteMasActivo,
+  calcularGananciaNetaMes,
 } from "@/lib/finanzas";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -32,22 +33,25 @@ export default function DashboardPage() {
   const [reinversion, setReinversion] = useState(0);
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [clienteActivo, setClienteActivo] = useState<any>(null);
+  const [gananciaNeta, setGananciaNeta] = useState(0);
 
   const fetchDatosMes = async (fecha: Date) => {
     const mes = fecha.getMonth();
     const anio = fecha.getFullYear();
 
-    const [ing, reinv, cuentasData, cliente] = await Promise.all([
+    const [ing, reinv, cuentasData, cliente, ganancia] = await Promise.all([
       calcularIngresosMes(mes, anio),
       calcularReinversionMes(mes, anio),
       supabase.from("caja_cuentas").select("*"),
       calcularClienteMasActivo(mes, anio),
+      calcularGananciaNetaMes(mes, anio),
     ]);
 
     setIngresos(ing);
     setReinversion(reinv);
     setCuentas(cuentasData.data || []);
     setClienteActivo(cliente);
+    setGananciaNeta(ganancia);
   };
 
   useEffect(() => {
@@ -90,7 +94,7 @@ export default function DashboardPage() {
     "flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl font-semibold text-[#007b00] shadow-[0_15px_30px_rgba(0,0,0,0.18)] transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0.5";
 
   return (
-    <div className="relative min-h-screen bg-[#f5f5f5] text-[#000]">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#e2f8ec] via-[#f0fff5] to-[#fefefe] text-[#000]">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#007b00]/12 via-[#f5f5f5] to-transparent -z-20"
@@ -102,6 +106,14 @@ export default function DashboardPage() {
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-12 right-0 h-36 w-36 rounded-full bg-[#007b00]/20 blur-[90px] -z-10"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-20 h-60 bg-gradient-to-t from-[#7fd4a3]/20 via-transparent to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-32 right-0 h-56 w-56 rounded-full bg-[#0ea45f]/10 blur-[120px] -z-10"
       />
       <div className="mx-auto relative z-10 flex max-w-md flex-col gap-6 px-4 py-8">
         <div className="text-center">
@@ -137,6 +149,14 @@ export default function DashboardPage() {
               <div className="w-48">
                 <Doughnut data={data} />
               </div>
+            </div>
+            <div className="mt-4 rounded-[22px] border border-[#daefdc] bg-white px-4 py-3 text-center shadow-[0_10px_25px_rgba(0,0,0,0.08)]">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-[#0d0d0d]">
+                Ganancia neta del mes
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#0f8b44]">
+                ${gananciaNeta.toLocaleString()}
+              </p>
             </div>
             {clienteActivo && (
               <div className="mt-4 rounded-[28px] border border-[#e5e5e5] bg-white p-4 text-center shadow-[0_15px_25px_rgba(0,0,0,0.08)]">
