@@ -74,12 +74,11 @@ export const calcularSueldoMes = async (mes?: number, año?: number) => {
     .reduce((acc, m) => acc + Number(m.monto), 0);
 };
 
-/** Ganancia neta = ingresos - reinversión - sueldo */
+/** Ganancia neta = ingresos - reinversión (sin descontar sueldo) */
 export const calcularGananciaNetaMes = async (mes?: number, año?: number) => {
   const ingresos = await calcularIngresosMes(mes, año);
   const reinversion = await calcularReinversionMes(mes, año);
-  const sueldo = await calcularSueldoMes(mes, año);
-  return ingresos - reinversion - sueldo;
+  return ingresos - reinversion;
 };
 
 /** Cliente más activo de un mes */
