@@ -460,7 +460,7 @@ if (!fechaCompra) {
               </label>
               <DatePicker
                 selected={fechaCompra}
-                onChange={(date) => setFechaCompra(date)}
+                onChange={(date: Date | null) => setFechaCompra(date)}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="dd/mm/yyyy"
                 className={inputClass}
