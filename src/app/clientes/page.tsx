@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Cliente {
   id: string;
@@ -85,7 +86,7 @@ const ClientesPage: React.FC = () => {
                 <span className="text-lg font-semibold text-[#000]">{cliente.nombre_completo}</span>
                 <span className="text-xs uppercase tracking-[0.3em] text-[#00000045]">
                   {cliente.ultima_compra
-                    ? `Última compra: ${new Date(cliente.ultima_compra).toLocaleDateString()}`
+                    ? `Última compra: ${formatFecha(cliente.ultima_compra)}`
                     : "Sin compras"}
                 </span>
             </Link>

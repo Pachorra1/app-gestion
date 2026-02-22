@@ -16,7 +16,12 @@ export const metadata: Metadata = {
   title: "Granjas Tegridad",
   description: "Sistema de gestión Granjas Tegridad",
   manifest: "/manifest.json",
-  themeColor: "#0f172a"
+  themeColor: "#0f172a",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

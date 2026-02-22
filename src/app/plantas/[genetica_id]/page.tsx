@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useParams } from "next/navigation";
+import { formatFecha } from "@/lib/dateUtils";
 
 interface Planta {
   id: string;
@@ -116,7 +117,7 @@ export default function GeneticaPage() {
                     </span>
                   </div>
                   <p className="text-sm text-[#4a4a4a]">
-                    Fecha de plantación: {new Date(planta.fecha_plantacion).toLocaleDateString()}
+                    Fecha de plantación: {formatFecha(planta.fecha_plantacion)}
                   </p>
                   <p className="text-sm text-[#4a4a4a]">
                     Notas: {planta.notas || "--"}

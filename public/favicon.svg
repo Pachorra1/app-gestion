@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+  <rect width="64" height="64" rx="12" fill="#050505" />
+  <defs>
+    <linearGradient id="leaf" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#8ef05a" />
+      <stop offset="45%" stop-color="#54b948" />
+      <stop offset="100%" stop-color="#1b7a2c" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c8c3c" />
+      <stop offset="100%" stop-color="#0f541d" />
+    </linearGradient>
+  </defs>
+  <g stroke="url(#edge)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M32 4 L26 24 L14 18 L18 30 L8 36 L22 40 L14 50 L32 44 L50 50 L42 40 L56 36 L46 30 L50 18 L38 24 Z"
+      fill="url(#leaf)"
+      stroke="url(#edge)"
+    />
+    <path
+      d="M32 44 L32 60"
+      stroke="#1a581e"
+      stroke-width="2"
+    />
+    <path
+      d="M24 20 L32 44"
+      stroke="#1c5e25"
+      stroke-width="2"
+    />
+    <path
+      d="M40 20 L32 44"
+      stroke="#1c5e25"
+      stroke-width="2"
+    />
+  </g>
+  <g opacity="0.6">
+    <path
+      d="M32 12 L28 32 L20 28"
+      stroke="#2aa84f"
+      stroke-width="1.2"
+      fill="none"
+    />
+    <path
+      d="M32 12 L36 32 L44 28"
+      stroke="#2aa84f"
+      stroke-width="1.2"
+      fill="none"
+    />
+  </g>
+</svg>

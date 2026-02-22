@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useParams } from "next/navigation";
+import { formatFecha } from "@/lib/dateUtils";
 
 type Orden = {
   id: string;
@@ -17,10 +18,6 @@ type Cliente = {
   id: string;
   nombre: string;
 };
-
-function formatearFecha(fecha: string) {
-  return new Date(fecha).toLocaleDateString("es-AR");
-}
 
 function formatearMoneda(valor: number) {
   return new Intl.NumberFormat("es-AR").format(valor);
@@ -106,14 +103,14 @@ export default function ClienteDetalle() {
               <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Última compra</p>
               <p className="mt-2 text-lg font-semibold text-[#000]">
                 {ultimaCompraReal
-                  ? `${formatearFecha(ultimaCompraReal.fecha)} · $${formatearMoneda(ultimaCompraReal.total)}`
+                  ? `${formatFecha(ultimaCompraReal.fecha)} · $${formatearMoneda(ultimaCompraReal.total)}`
                   : "Sin compras"}
               </p>
             </div>
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
               <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Última prueba</p>
               <p className="mt-2 text-lg font-semibold text-[#000]">
-                {ultimaPrueba ? formatearFecha(ultimaPrueba.fecha) : "Nunca hizo prueba"}
+                {ultimaPrueba ? formatFecha(ultimaPrueba.fecha) : "Nunca hizo prueba"}
               </p>
             </div>
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
@@ -140,7 +137,7 @@ export default function ClienteDetalle() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#000]">
-                      {formatearFecha(orden.fecha)}
+                      {formatFecha(orden.fecha)}
                     </span>
                     <span className="text-xs uppercase tracking-[0.3em] text-[#00000040]">
                       {orden.metodo_pago === "prueba" ? "Prueba" : "Compra"}

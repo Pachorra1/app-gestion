@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { formatFechaHora } from "@/lib/dateUtils";
 
 type Movimiento = {
   id: string;
@@ -236,7 +237,7 @@ export default function CajaPage() {
                     </span>
                   </div>
                   <p className="text-xs uppercase tracking-[0.25em] text-[#00000040]">
-                    {new Date(mov.fecha_movimiento).toLocaleString()}
+                    {formatFechaHora(mov.fecha_movimiento)}
                   </p>
                   <p className="text-sm text-[#4a4a4a]">
                     {mov.referencia || "Sin referencia"}

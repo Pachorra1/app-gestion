@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { formatDateForInput, formatFecha } from "@/lib/dateUtils";
 
 type Cliente = {
   id: string;
@@ -41,7 +42,7 @@ type Orden = {
 
 export default function OrdenesPage() {
   const [form, setForm] = useState({
-    fecha: new Date().toISOString().slice(0, 10),
+    fecha: formatDateForInput(new Date()),
     clienteId: "",
     geneticaId: "",
     cantidadReal: "",
@@ -252,6 +253,7 @@ export default function OrdenesPage() {
       precioPorGramo: "",
       numeroOrden: `ORD-${Date.now()}`,
       esPrueba: false,
+      fecha: formatDateForInput(new Date()),
     }));
   } catch (error: any) {
     setMensaje({
@@ -460,7 +462,7 @@ export default function OrdenesPage() {
                 >
                   <p className="text-sm font-semibold text-[#000]">{orden.numero_orden}</p>
                   <p className="text-xs uppercase tracking-[0.3em] text-[#00000050]">
-                    {orden.fecha.slice(0, 10)} · {orden.metodo_pago}
+                    {formatFecha(orden.fecha)} · {orden.metodo_pago}
                   </p>
                   <p className="text-sm text-[#4a4a4a]">
                     Cliente: {cliente?.nombre_completo || "Desconocido"} · Cantidad:{" "}

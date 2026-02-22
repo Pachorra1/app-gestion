@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { formatFechaHora } from "@/lib/dateUtils";
 
 interface Movimiento {
   id: string;
@@ -143,7 +144,7 @@ const DetalleGeneticaPage: React.FC = () => {
                       {m.tipo === "entrada" ? "+" : "-"} {m.cantidad} g
                     </span>
                     <span className="text-xs uppercase tracking-[0.3em] text-[#00000040]">
-                      {new Date(m.fecha).toLocaleString()}
+                      {formatFechaHora(m.fecha)}
                     </span>
                   </div>
                   {m.nota && (
