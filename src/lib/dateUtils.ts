@@ -1,4 +1,5 @@
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const TIMEZONE_OFFSET_REGEX = /[zZ]|[+-]\d{2}:\d{2}$/;
 const DEFAULT_LOCALE = "es-AR";
 
 const getClientTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -13,6 +14,10 @@ function parseLocalDate(value?: string | null | Date): Date | null {
   if (DATE_ONLY_REGEX.test(value)) {
     const [year, month, day] = value.split("-").map(Number);
     return new Date(year, month - 1, day);
+  }
+
+  if (value.includes("T") && !TIMEZONE_OFFSET_REGEX.test(value)) {
+    value = `${value}Z`;
   }
 
   const parsed = new Date(value);
