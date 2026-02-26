@@ -60,7 +60,7 @@ const obtenerOrdenesPorMes = async (mes?: number, año?: number) => {
   const { inicioISO, finISO } = formatearRangoMes(mes, año);
   const { data, error } = await supabase
     .from("ordenes")
-    .select("id, cliente_id, total, cantidad_real_gramos, fecha")
+    .select("id, cliente_id, total, cantidad_real_gramos, cantidad_cobrada_gramos, fecha")
     .gte("fecha", inicioISO)
     .lte("fecha", finISO);
 
@@ -73,6 +73,7 @@ const obtenerOrdenesPorMes = async (mes?: number, año?: number) => {
     cliente_id: string | null;
     total: number;
     cantidad_real_gramos?: number | null;
+    cantidad_cobrada_gramos?: number | null;
   }[];
 };
 
