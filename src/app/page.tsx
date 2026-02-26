@@ -15,6 +15,7 @@ import {
   calcularReinversionMes,
   calcularClienteMasActivo,
   calcularGananciaNetaMes,
+  calcularGramosVendidosMes,
 } from "@/lib/finanzas";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -27,6 +28,11 @@ const moduloLinks = [
   { href: "/plantas", label: "Plantas" },
 ];
 
+const formatearGramos = new Intl.NumberFormat("es-AR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
 export default function DashboardPage() {
   const [mesActual, setMesActual] = useState(new Date());
   const [ingresos, setIngresos] = useState(0);
@@ -34,17 +40,19 @@ export default function DashboardPage() {
   const [cuentas, setCuentas] = useState<any[]>([]);
   const [clienteActivo, setClienteActivo] = useState<any>(null);
   const [gananciaNeta, setGananciaNeta] = useState(0);
+  const [gramosVendidos, setGramosVendidos] = useState(0);
 
   const fetchDatosMes = async (fecha: Date) => {
     const mes = fecha.getMonth();
     const anio = fecha.getFullYear();
 
-    const [ing, reinv, cuentasData, cliente, ganancia] = await Promise.all([
+    const [ing, reinv, cuentasData, cliente, ganancia, gramos] = await Promise.all([
       calcularIngresosMes(mes, anio),
       calcularReinversionMes(mes, anio),
       supabase.from("caja_cuentas").select("*"),
       calcularClienteMasActivo(mes, anio),
       calcularGananciaNetaMes(mes, anio),
+      calcularGramosVendidosMes(mes, anio),
     ]);
 
     setIngresos(ing);
@@ -52,6 +60,7 @@ export default function DashboardPage() {
     setCuentas(cuentasData.data || []);
     setClienteActivo(cliente);
     setGananciaNeta(ganancia);
+    setGramosVendidos(gramos);
   };
 
   useEffect(() => {
@@ -159,18 +168,30 @@ export default function DashboardPage() {
               </p>
             </div>
             {clienteActivo && (
-              <div className="mt-4 rounded-[28px] border border-[#e5e5e5] bg-white p-4 text-center shadow-[0_15px_25px_rgba(0,0,0,0.08)]">
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#0d0d0d]">
-                  Cliente más activo
-                </p>
-                <p className="mt-1 text-lg font-semibold text-[#000]">
-                  {clienteActivo.nombre}
-                </p>
-                <p className="text-xs text-[#00000080]">
-                  {clienteActivo.cantidadOrdenes} órdenes · ${" "}
-                  {clienteActivo.totalFacturado.toLocaleString()}
-                </p>
-              </div>
+              <>
+                <div className="mt-4 rounded-[28px] border border-[#e5e5e5] bg-white p-4 text-center shadow-[0_15px_25px_rgba(0,0,0,0.08)]">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-[#0d0d0d]">
+                    Cliente más activo
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-[#000]">
+                    {clienteActivo.nombre}
+                  </p>
+                  <p className="text-xs text-[#00000080]">
+                    {clienteActivo.cantidadOrdenes} órdenes · ${" "}
+                    {clienteActivo.totalFacturado.toLocaleString()}
+                  </p>
+                </div>
+                <div className="mt-3">
+                  <div className="rounded-[24px] border border-[#daefdc] bg-white px-3 py-3 text-center shadow-[0_6px_14px_rgba(0,0,0,0.08)]">
+                    <p className="text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-[#00000070] leading-none whitespace-nowrap">
+                      Gramos cobrados este mes
+                    </p>
+                    <p className="text-lg font-semibold text-[#000] tracking-tight mt-1">
+                      {formatearGramos.format(gramosVendidos)} g
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

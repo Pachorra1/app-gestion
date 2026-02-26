@@ -17,6 +17,12 @@ type Orden = {
 type Cliente = {
   id: string;
   nombre: string;
+  telefono?: string | null;
+};
+
+type MensajeTelefono = {
+  tipo: "success" | "error" | "";
+  texto: string;
 };
 
 function formatearMoneda(valor: number) {
@@ -35,7 +41,12 @@ export default function ClienteDetalle() {
   const id = params.id as string;
 
   const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [telefono, setTelefono] = useState("");
+  const [guardandoTelefono, setGuardandoTelefono] = useState(false);
+  const [mensajeTelefono, setMensajeTelefono] = useState<MensajeTelefono>({ tipo: "", texto: "" });
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
+  const inputClass =
+    "w-full rounded-[18px] border border-[#d5d5d5] bg-white px-3 py-2 text-sm font-semibold text-[#000] transition focus:border-[#007b00] focus:outline-none focus:ring-2 focus:ring-[#007b00]/30";
 
   useEffect(() => {
     async function fetchData() {
@@ -51,7 +62,10 @@ export default function ClienteDetalle() {
         .eq("cliente_id", id)
         .order("fecha", { ascending: false });
 
-      if (clienteData) setCliente(clienteData);
+      if (clienteData) {
+        setCliente(clienteData);
+        setTelefono(clienteData.telefono ?? "");
+      }
       if (ordenesData) setOrdenes(ordenesData);
     }
 
@@ -78,6 +92,24 @@ export default function ClienteDetalle() {
     0
   );
 
+  const guardarTelefono = async () => {
+    if (!id) return;
+    setGuardandoTelefono(true);
+    setMensajeTelefono({ tipo: "", texto: "" });
+    const valor = telefono.trim();
+    const { error } = await supabase
+      .from("clientes")
+      .update({ telefono: valor || null })
+      .eq("id", id);
+    if (error) {
+      setMensajeTelefono({ tipo: "error", texto: "No se pudo guardar el teléfono." });
+    } else {
+      setMensajeTelefono({ tipo: "success", texto: "Teléfono actualizado." });
+      setCliente((prev) => (prev ? { ...prev, telefono: valor || null } : prev));
+    }
+    setGuardandoTelefono(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-[#000]">
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8">
@@ -100,9 +132,9 @@ export default function ClienteDetalle() {
         <section className="rounded-[32px] bg-white px-6 py-7 shadow-[0_30px_70px_rgba(15,23,42,0.12)]">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
-              <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Última compra</p>
-              <p className="mt-2 text-lg font-semibold text-[#000]">
-                {ultimaCompraReal
+                <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Última compra</p>
+                <p className="mt-2 text-lg font-semibold text-[#000]">
+                  {ultimaCompraReal
                   ? `${formatFecha(ultimaCompraReal.fecha)} · $${formatearMoneda(ultimaCompraReal.total)}`
                   : "Sin compras"}
               </p>
@@ -120,6 +152,34 @@ export default function ClienteDetalle() {
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
               <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Total gramos</p>
               <p className="mt-2 text-lg font-semibold text-[#000]">{formatearGramos(totalGramos)} g</p>
+            </div>
+            <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
+              <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Teléfono</p>
+              <div className="mt-3 space-y-2">
+                <input
+                  type="tel"
+                  className={inputClass}
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  placeholder="Ej.: +54 9 11 1234 5678"
+                />
+                <button
+                  onClick={guardarTelefono}
+                  disabled={guardandoTelefono}
+                  className="w-full rounded-full bg-[#007b00] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#0f8f44] disabled:opacity-60"
+                >
+                  {guardandoTelefono ? "Guardando..." : "Guardar"}
+                </button>
+              </div>
+              {mensajeTelefono.texto && (
+                <p
+                  className={`mt-2 text-xs ${
+                    mensajeTelefono.tipo === "success" ? "text-[#047857]" : "text-[#dc2626]"
+                  }`}
+                >
+                  {mensajeTelefono.texto}
+                </p>
+              )}
             </div>
           </div>
         </section>

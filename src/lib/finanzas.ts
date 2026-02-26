@@ -20,18 +20,33 @@ export type ClienteActivo = {
  * @param mes 0-11 (Enero = 0)
  * @param año 2026
  */
+const formatearRangoMes = (mes?: number, año?: number) => {
+  const fecha = mes !== undefined && año !== undefined
+    ? { inicio: new Date(año, mes, 1), fin: new Date(año, mes + 1, 0, 23, 59, 59) }
+    : (() => {
+        const ahora = new Date();
+        return {
+          inicio: new Date(ahora.getFullYear(), ahora.getMonth(), 1),
+          fin: new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59),
+        };
+      })();
+  return {
+    inicioISO: fecha.inicio.toISOString(),
+    finISO: fecha.fin.toISOString(),
+  };
+};
+
 export const obtenerMovimientosPorMes = async (
   mes: number,
   año: number
 ): Promise<Movimiento[]> => {
-  const primerDia = new Date(año, mes, 1);
-  const ultimoDia = new Date(año, mes + 1, 0, 23, 59, 59);
+  const { inicioISO, finISO } = formatearRangoMes(mes, año);
 
   const { data, error } = await supabase
     .from("caja_movimientos")
     .select("*")
-    .gte("fecha_movimiento", primerDia.toISOString())
-    .lte("fecha_movimiento", ultimoDia.toISOString());
+    .gte("fecha_movimiento", inicioISO)
+    .lte("fecha_movimiento", finISO);
 
   if (error) {
     console.error(error);
@@ -39,6 +54,26 @@ export const obtenerMovimientosPorMes = async (
   }
 
   return data as Movimiento[];
+};
+
+const obtenerOrdenesPorMes = async (mes?: number, año?: number) => {
+  const { inicioISO, finISO } = formatearRangoMes(mes, año);
+  const { data, error } = await supabase
+    .from("ordenes")
+    .select("id, cliente_id, total, cantidad_real_gramos, fecha")
+    .gte("fecha", inicioISO)
+    .lte("fecha", finISO);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data as {
+    id: string;
+    cliente_id: string | null;
+    total: number;
+    cantidad_real_gramos?: number | null;
+  }[];
 };
 
 /** Calcula ingresos del mes */
@@ -83,33 +118,23 @@ export const calcularGananciaNetaMes = async (mes?: number, año?: number) => {
 
 /** Cliente más activo de un mes */
 export const calcularClienteMasActivo = async (mes?: number, año?: number): Promise<ClienteActivo | null> => {
-  const fechaInicio = mes !== undefined && año !== undefined
-    ? new Date(año, mes, 1)
-    : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const ordenes = await obtenerOrdenesPorMes(mes, año);
 
-  const fechaFin = mes !== undefined && año !== undefined
-    ? new Date(año, mes + 1, 0, 23, 59, 59)
-    : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
-
-  // Traer órdenes del mes
-  const { data: ordenes, error } = await supabase
-    .from("ordenes")
-    .select("cliente_id,total")
-    .gte("created_at", fechaInicio.toISOString())
-    .lte("created_at", fechaFin.toISOString());
-
-  if (error || !ordenes || ordenes.length === 0) return null;
+  if (ordenes.length === 0) return null;
 
   // Contar cantidad de órdenes por cliente
   const contador: Record<string, { cantidad: number; total: number }> = {};
 
   ordenes.forEach((o: any) => {
-    if (!contador[o.cliente_id]) contador[o.cliente_id] = { cantidad: 0, total: 0 };
-    contador[o.cliente_id].cantidad += 1;
-    contador[o.cliente_id].total += Number(o.total);
+    const clienteId = o.cliente_id;
+    if (!clienteId) return;
+    if (!contador[clienteId]) contador[clienteId] = { cantidad: 0, total: 0 };
+    contador[clienteId].cantidad += 1;
+    contador[clienteId].total += Number(o.total);
   });
 
   // Encontrar cliente con más órdenes
+  if (Object.keys(contador).length === 0) return null;
   const clienteIdMasActivo = Object.entries(contador).sort((a, b) => b[1].cantidad - a[1].cantidad)[0][0];
   const clienteData = await supabase
     .from("clientes")
@@ -124,4 +149,12 @@ export const calcularClienteMasActivo = async (mes?: number, año?: number): Pro
     cantidadOrdenes: contador[clienteIdMasActivo].cantidad,
     totalFacturado: contador[clienteIdMasActivo].total,
   };
+};
+
+export const calcularGramosVendidosMes = async (mes?: number, año?: number) => {
+  const ordenes = await obtenerOrdenesPorMes(mes, año);
+  return ordenes.reduce((acc, orden) => {
+    const gramos = orden.cantidad_cobrada_gramos ?? orden.cantidad_real_gramos ?? 0;
+    return acc + Number(gramos);
+  }, 0);
 };
