@@ -181,16 +181,16 @@ export default function DashboardPage() {
                     {clienteActivo.totalFacturado.toLocaleString()}
                   </p>
                 </div>
-                <div className="mt-3">
-                  <div className="rounded-[24px] border border-[#daefdc] bg-white px-3 py-3 text-center shadow-[0_6px_14px_rgba(0,0,0,0.08)]">
-                    <p className="text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-[#00000070] leading-none whitespace-nowrap">
-                      Gramos cobrados este mes
-                    </p>
-                    <p className="text-lg font-semibold text-[#000] tracking-tight mt-1">
-                      {formatearGramos.format(gramosVendidos)} g
-                    </p>
+                  <div className="mt-3">
+                    <div className="rounded-[24px] border border-[#daefdc] bg-white px-3 py-3 text-center shadow-[0_6px_14px_rgba(0,0,0,0.08)]">
+                      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-[#00000070] leading-none whitespace-nowrap">
+                        Gramos vendidos este mes
+                      </p>
+                      <p className="text-lg font-semibold text-[#000] tracking-tight mt-1">
+                        {formatearGramos.format(gramosVendidos)} g
+                      </p>
+                    </div>
                   </div>
-                </div>
               </>
             )}
           </div>

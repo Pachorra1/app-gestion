@@ -60,7 +60,7 @@ const obtenerOrdenesPorMes = async (mes?: number, año?: number) => {
   const { inicioISO, finISO } = formatearRangoMes(mes, año);
   const { data, error } = await supabase
     .from("ordenes")
-    .select("id, cliente_id, total, cantidad_real_gramos, cantidad_cobrada_gramos, fecha")
+    .select("id, cliente_id, total, cantidad_real_gramos, fecha")
     .gte("fecha", inicioISO)
     .lte("fecha", finISO);
 
@@ -73,7 +73,6 @@ const obtenerOrdenesPorMes = async (mes?: number, año?: number) => {
     cliente_id: string | null;
     total: number;
     cantidad_real_gramos?: number | null;
-    cantidad_cobrada_gramos?: number | null;
   }[];
 };
 
@@ -155,7 +154,7 @@ export const calcularClienteMasActivo = async (mes?: number, año?: number): Pro
 export const calcularGramosVendidosMes = async (mes?: number, año?: number) => {
   const ordenes = await obtenerOrdenesPorMes(mes, año);
   return ordenes.reduce((acc, orden) => {
-    const gramos = orden.cantidad_cobrada_gramos ?? orden.cantidad_real_gramos ?? 0;
+    const gramos = orden.cantidad_real_gramos ?? 0;
     return acc + Number(gramos);
   }, 0);
 };
