@@ -161,6 +161,7 @@ export default function OrdenesPage() {
     const numeroOrdenFinal = form.esPrueba
       ? `ORD-PRUEBA-${Date.now()}`
       : form.numeroOrden;
+    const movimientoFecha = new Date().toISOString();
 
     // Insertar la orden
     const { data: orden, error: ordenError } = await supabase
@@ -223,7 +224,7 @@ export default function OrdenesPage() {
           cuenta_id: cajaCuenta.id,
           tipo: "ingreso",
           monto: cantidadCobradaNum * precioNum,
-          fecha_movimiento: form.fecha,
+          fecha_movimiento: movimientoFecha,
           referencia: `Orden ${numeroOrdenFinal}`,
         });
       }
