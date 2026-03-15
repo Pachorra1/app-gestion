@@ -16,11 +16,12 @@ type Orden = {
 
 type Cliente = {
   id: string;
-  nombre: string;
+  nombre?: string;
+  nombre_completo?: string | null;
   telefono?: string | null;
 };
 
-type MensajeTelefono = {
+type MensajeEstado = {
   tipo: "success" | "error" | "";
   texto: string;
 };
@@ -43,8 +44,11 @@ export default function ClienteDetalle() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [telefono, setTelefono] = useState("");
   const [guardandoTelefono, setGuardandoTelefono] = useState(false);
-  const [mensajeTelefono, setMensajeTelefono] = useState<MensajeTelefono>({ tipo: "", texto: "" });
+  const [mensajeTelefono, setMensajeTelefono] = useState<MensajeEstado>({ tipo: "", texto: "" });
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
+  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [guardandoNombre, setGuardandoNombre] = useState(false);
+  const [mensajeNombre, setMensajeNombre] = useState<MensajeEstado>({ tipo: "", texto: "" });
   const inputClass =
     "w-full rounded-[18px] border border-[#d5d5d5] bg-white px-3 py-2 text-sm font-semibold text-[#000] transition focus:border-[#007b00] focus:outline-none focus:ring-2 focus:ring-[#007b00]/30";
 
@@ -63,7 +67,9 @@ export default function ClienteDetalle() {
         .order("fecha", { ascending: false });
 
       if (clienteData) {
+        const nombreInicial = clienteData.nombre_completo ?? clienteData.nombre ?? "";
         setCliente(clienteData);
+        setNombreCompleto(nombreInicial);
         setTelefono(clienteData.telefono ?? "");
       }
       if (ordenesData) setOrdenes(ordenesData);
@@ -91,6 +97,46 @@ export default function ClienteDetalle() {
     (acc, o) => acc + Number(o.cantidad_real_gramos),
     0
   );
+  const nombreParaMostrar =
+    nombreCompleto || cliente.nombre_completo || cliente.nombre || "Cliente";
+
+  const guardarNombreCompleto = async () => {
+    if (!id) return;
+    const valor = nombreCompleto.trim();
+    if (!valor) {
+      setMensajeNombre({ tipo: "error", texto: "El nombre no puede estar vacío." });
+      return;
+    }
+    setGuardandoNombre(true);
+    setMensajeNombre({ tipo: "", texto: "" });
+    const updates: { nombre_completo: string; nombre?: string } = {
+      nombre_completo: valor,
+    };
+    if (cliente?.nombre !== undefined) {
+      updates.nombre = valor;
+    }
+    const { error } = await supabase.from("clientes").update(updates).eq("id", id);
+    if (error) {
+      console.error("Error guardando nombre:", error);
+      const mensajeError = error.message
+        ? `No se pudo guardar el nombre: ${error.message}`
+        : "No se pudo guardar el nombre.";
+      setMensajeNombre({ tipo: "error", texto: mensajeError });
+    } else {
+      setMensajeNombre({ tipo: "success", texto: "Nombre actualizado." });
+      setNombreCompleto(valor);
+      setCliente((prev) =>
+        prev
+          ? {
+              ...prev,
+              nombre: prev.nombre !== undefined ? valor : prev.nombre,
+              nombre_completo: valor,
+            }
+          : prev
+      );
+    }
+    setGuardandoNombre(false);
+  };
 
   const guardarTelefono = async () => {
     if (!id) return;
@@ -125,7 +171,7 @@ export default function ClienteDetalle() {
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-[#00000050]">
               Clientes
             </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#000]">{cliente.nombre}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-[#000]">{nombreParaMostrar}</h1>
           </div>
         </div>
 
@@ -152,6 +198,34 @@ export default function ClienteDetalle() {
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
               <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Total gramos</p>
               <p className="mt-2 text-lg font-semibold text-[#000]">{formatearGramos(totalGramos)} g</p>
+            </div>
+            <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
+              <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Nombre completo</p>
+              <div className="mt-3 space-y-2">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={nombreCompleto}
+                  onChange={(e) => setNombreCompleto(e.target.value)}
+                  placeholder="Ej.: Juan Pérez"
+                />
+                <button
+                  onClick={guardarNombreCompleto}
+                  disabled={guardandoNombre}
+                  className="w-full rounded-full bg-[#007b00] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#0f8f44] disabled:opacity-60"
+                >
+                  {guardandoNombre ? "Guardando..." : "Guardar nombre"}
+                </button>
+              </div>
+              {mensajeNombre.texto && (
+                <p
+                  className={`mt-2 text-xs ${
+                    mensajeNombre.tipo === "success" ? "text-[#047857]" : "text-[#dc2626]"
+                  }`}
+                >
+                  {mensajeNombre.texto}
+                </p>
+              )}
             </div>
             <div className="rounded-[24px] border border-[#e5e5e5] bg-[#fdfdfd] px-4 py-5 shadow-[0_12px_25px_rgba(0,0,0,0.08)]">
               <p className="text-xs uppercase tracking-[0.15em] text-[#00000045]">Teléfono</p>
